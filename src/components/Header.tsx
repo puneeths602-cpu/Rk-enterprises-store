@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShoppingCart, Search, Menu, X, Phone, MapPin, MessageCircle, ArrowRight } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Phone, MapPin, MessageCircle, ArrowRight, Lock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { STORE_INFO } from '@/data/products';
 
@@ -169,13 +169,14 @@ export default function Header({ onSearchChange, searchQuery }: HeaderProps) {
               <span>Call Us</span>
             </a>
 
-            {/* Owner Daily Rates Quick Access */}
+            {/* Owner Daily Rates Secure Access */}
             <button
               onClick={() => setIsAdminOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 text-xs font-black text-amber-950 bg-amber-400 hover:bg-amber-300 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
-              title="Update daily market rates"
+              className="hidden md:flex items-center gap-1.5 text-xs font-bold text-neutral-800 bg-neutral-100 hover:bg-neutral-200 border border-neutral-300 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
+              title="Shop Owner PIN Verification"
             >
-              <span>⚡ Update Rates</span>
+              <Lock className="w-3.5 h-3.5 text-amber-600" />
+              <span>Owner Rates</span>
             </button>
 
             {/* Shopping Cart Button */}
@@ -248,10 +249,13 @@ export default function Header({ onSearchChange, searchQuery }: HeaderProps) {
                 setIsAdminOpen(true);
                 setMobileMenuOpen(false);
               }}
-              className="flex items-center justify-between w-full text-left py-2 border-b border-neutral-100 text-amber-700 font-bold"
+              className="flex items-center justify-between w-full text-left py-2 border-b border-neutral-100 text-neutral-800 font-bold"
             >
-              <span>⚡ Owner Panel: Update Daily Rates</span>
-              <ArrowRight className="w-4 h-4 text-amber-600" />
+              <span className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-amber-600" />
+                <span>Shop Owner Rate Login</span>
+              </span>
+              <ArrowRight className="w-4 h-4 text-neutral-400" />
             </button>
             <button
               onClick={() => {

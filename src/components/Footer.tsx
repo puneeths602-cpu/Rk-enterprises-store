@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Phone, MapPin, MessageCircle, Clock, ShieldCheck } from 'lucide-react';
+import { Phone, MapPin, MessageCircle, Clock, ShieldCheck, Lock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { STORE_INFO } from '@/data/products';
 
@@ -188,8 +188,9 @@ export default function Footer() {
                 </button>
               </li>
               <li>
-                <button onClick={() => setIsAdminOpen(true)} className="hover:text-amber-400 font-bold text-amber-500 transition-colors cursor-pointer text-left flex items-center gap-1">
-                  <span>⚡ Update Daily Rates (Owner)</span>
+                <button onClick={() => setIsAdminOpen(true)} className="hover:text-amber-400 font-bold text-neutral-400 hover:text-amber-400 transition-colors cursor-pointer text-left flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-amber-500" />
+                  <span>Owner Login (Daily Rates)</span>
                 </button>
               </li>
             </ul>
