@@ -53,12 +53,18 @@ export default function AdminPriceModal() {
   };
 
   const handleLockLogout = () => {
+    // Ensure all edited items are saved before locking
+    Object.entries(editPrices).forEach(([id, data]) => {
+      if (data.price > 0) {
+        updateProductPrice(id, data.price, data.originalPrice);
+      }
+    });
     setIsAuthenticated(false);
     setIsChangingPin(false);
     setEnteredPin('');
     setPinError('');
     setIsAdminOpen(false);
-    showToast('Owner panel locked and logged out.');
+    showToast('Owner panel locked and saved.');
   };
 
   const handleChangePinSubmit = (e: React.FormEvent) => {
@@ -86,32 +92,47 @@ export default function AdminPriceModal() {
 
   const handlePriceChange = (id: string, value: string) => {
     const num = parseFloat(value);
+    const validNum = isNaN(num) ? 0 : num;
     setEditPrices((prev) => ({
       ...prev,
       [id]: {
         ...prev[id],
-        price: isNaN(num) ? 0 : num,
+        price: validNum,
       },
     }));
+    // Auto-save instantly as you type!
+    if (validNum > 0) {
+      const orig = editPrices[id]?.originalPrice ?? products.find((p) => p.id === id)?.originalPrice;
+      updateProductPrice(id, validNum, orig);
+      setSavedId(id);
+      setTimeout(() => setSavedId((curr) => (curr === id ? null : curr)), 1200);
+    }
   };
 
   const handleOriginalPriceChange = (id: string, value: string) => {
     const num = parseFloat(value);
+    const currentPrice = editPrices[id]?.price ?? products.find((p) => p.id === id)?.price ?? 0;
+    const orig = isNaN(num) ? undefined : num;
     setEditPrices((prev) => ({
       ...prev,
       [id]: {
-        price: prev[id]?.price ?? products.find((p) => p.id === id)?.price ?? 0,
-        originalPrice: isNaN(num) ? undefined : num,
+        price: currentPrice,
+        originalPrice: orig,
       },
     }));
+    if (currentPrice > 0) {
+      updateProductPrice(id, currentPrice, orig);
+    }
   };
 
   const handleSaveSingle = (id: string) => {
     const current = editPrices[id];
-    if (current && current.price > 0) {
-      updateProductPrice(id, current.price, current.originalPrice);
+    const priceToSave = current?.price ?? products.find((p) => p.id === id)?.price ?? 0;
+    if (priceToSave > 0) {
+      updateProductPrice(id, priceToSave, current?.originalPrice);
       setSavedId(id);
       setTimeout(() => setSavedId(null), 1500);
+      showToast('Price saved and live on website!');
     }
   };
 

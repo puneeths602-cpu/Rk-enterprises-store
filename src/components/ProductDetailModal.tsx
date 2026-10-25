@@ -6,7 +6,7 @@ import { useCart } from '@/context/CartContext';
 import { STORE_INFO } from '@/data/products';
 
 export default function ProductDetailModal() {
-  const { quickViewProduct, setQuickViewProduct, addToCart, setIsCartOpen } = useCart();
+  const { quickViewProduct, setQuickViewProduct, addToCart, setIsCartOpen, products } = useCart();
   const [selectedImgIdx, setSelectedImgIdx] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | undefined>(undefined);
   const [quantity, setQuantity] = useState(1);
@@ -14,7 +14,8 @@ export default function ProductDetailModal() {
 
   if (!quickViewProduct) return null;
 
-  const product = quickViewProduct;
+  // Always bind to the active updated product from products state
+  const product = products.find((p) => p.id === quickViewProduct.id) || quickViewProduct;
   const currentSize = selectedSize || (product.availableSizes && product.availableSizes.length > 0 ? product.availableSizes[0] : undefined);
   const images = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
 

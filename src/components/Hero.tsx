@@ -6,8 +6,8 @@ import { useCart } from '@/context/CartContext';
 import { STORE_INFO, PRODUCTS } from '@/data/products';
 
 export default function Hero() {
-  const { setQuickViewProduct } = useCart();
-  const featuredTataTmt = PRODUCTS.find((p) => p.id === 'tmt-tata-tiscon') || PRODUCTS[3];
+  const { setQuickViewProduct, products } = useCart();
+  const featuredTataTmt = products.find((p) => p.id === 'tmt-tata-tiscon') || products[0];
 
   const scrollToCatalog = () => {
     const el = document.getElementById('catalog');
@@ -133,10 +133,10 @@ export default function Hero() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-black text-amber-400">
-                        ₹495
+                        ₹{featuredTataTmt.price.toLocaleString('en-IN')}
                       </div>
                       <div className="text-[11px] text-neutral-400">
-                        Per Rod (12m)
+                        {featuredTataTmt.unit}
                       </div>
                     </div>
                   </div>
