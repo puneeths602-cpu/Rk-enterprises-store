@@ -22,7 +22,7 @@ export default function AdminPriceModal() {
 
   // Editing states
   const [search, setSearch] = useState('');
-  const [editPrices, setEditPrices] = useState<Record<string, { price: number; originalPrice?: number }>>({});
+  const [editPrices, setEditPrices] = useState<Record<string, { price: string; originalPrice?: string }>>({});
   const [savedId, setSavedId] = useState<string | null>(null);
 
   // Load custom PIN if set
@@ -37,16 +37,19 @@ export default function AdminPriceModal() {
     }
   }, []);
 
-  // Pre-load all current product rates into editor inputs
+  // Pre-load current product rates into editor inputs when modal opens
   useEffect(() => {
     if (isAdminOpen) {
-      const initial: Record<string, { price: number; originalPrice?: number }> = {};
+      const initial: Record<string, { price: string; originalPrice?: string }> = {};
       products.forEach((p) => {
-        initial[p.id] = { price: p.price, originalPrice: p.originalPrice };
+        initial[p.id] = {
+          price: String(p.price),
+          originalPrice: p.originalPrice ? String(p.originalPrice) : '',
+        };
       });
       setEditPrices(initial);
     }
-  }, [isAdminOpen, products]);
+  }, [isAdminOpen]);
 
   if (!isAdminOpen) return null;
 
@@ -61,21 +64,6 @@ export default function AdminPriceModal() {
       setPinError('Incorrect Owner PIN. Access restricted to RK Enterprises management only.');
       setEnteredPin('');
     }
-  };
-
-  const handleLockLogout = () => {
-    // Ensure all edited items are saved before locking
-    Object.entries(editPrices).forEach(([id, data]) => {
-      if (data.price > 0) {
-        updateProductPrice(id, data.price, data.originalPrice);
-      }
-    });
-    setIsAuthenticated(false);
-    setIsChangingPin(false);
-    setEnteredPin('');
-    setPinError('');
-    setIsAdminOpen(false);
-    showToast('Owner panel locked and saved.');
   };
 
   const handleChangePinSubmit = (e: React.FormEvent) => {
@@ -102,63 +90,64 @@ export default function AdminPriceModal() {
   };
 
   const handlePriceChange = (id: string, value: string) => {
-    const num = parseFloat(value);
-    const validNum = isNaN(num) ? 0 : num;
     setEditPrices((prev) => ({
       ...prev,
       [id]: {
-        ...prev[id],
-        price: validNum,
+        price: value,
+        originalPrice: prev[id]?.originalPrice,
       },
     }));
-    // Auto-save instantly as you type!
-    if (validNum > 0) {
-      const orig = editPrices[id]?.originalPrice ?? products.find((p) => p.id === id)?.originalPrice;
-      updateProductPrice(id, validNum, orig);
-      setSavedId(id);
-      setTimeout(() => setSavedId((curr) => (curr === id ? null : curr)), 1200);
-    }
   };
 
   const handleOriginalPriceChange = (id: string, value: string) => {
-    const num = parseFloat(value);
-    const currentPrice = editPrices[id]?.price ?? products.find((p) => p.id === id)?.price ?? 0;
-    const orig = isNaN(num) ? undefined : num;
     setEditPrices((prev) => ({
       ...prev,
       [id]: {
-        price: currentPrice,
-        originalPrice: orig,
+        price: prev[id]?.price ?? '',
+        originalPrice: value,
       },
     }));
-    if (currentPrice > 0) {
-      updateProductPrice(id, currentPrice, orig);
-    }
   };
 
-  const handleSaveSingle = (id: string) => {
-    const current = editPrices[id];
-    const priceToSave = current?.price ?? products.find((p) => p.id === id)?.price ?? 0;
-    if (priceToSave > 0) {
-      updateProductPrice(id, priceToSave, current?.originalPrice);
-      setSavedId(id);
-      setTimeout(() => setSavedId(null), 1500);
-      showToast('Price saved and live on website!');
-    }
+  const saveProductRate = (id: string) => {
+    const data = editPrices[id];
+    if (!data) return;
+    const newPrice = parseFloat(data.price);
+    if (isNaN(newPrice) || newPrice <= 0) return;
+    const origNum = data.originalPrice ? parseFloat(data.originalPrice) : undefined;
+    const newOrig = origNum !== undefined && !isNaN(origNum) ? origNum : undefined;
+
+    updateProductPrice(id, newPrice, newOrig);
+    setSavedId(id);
+    setTimeout(() => setSavedId((curr) => (curr === id ? null : curr)), 1500);
   };
 
   const handleSaveAll = () => {
     let count = 0;
     Object.entries(editPrices).forEach(([id, data]) => {
-      if (data.price > 0) {
-        updateProductPrice(id, data.price, data.originalPrice);
+      const newPrice = parseFloat(data.price);
+      if (!isNaN(newPrice) && newPrice > 0) {
+        const origNum = data.originalPrice ? parseFloat(data.originalPrice) : undefined;
+        const newOrig = origNum !== undefined && !isNaN(origNum) ? origNum : undefined;
+        updateProductPrice(id, newPrice, newOrig);
         count++;
       }
     });
     if (count > 0) {
-      showToast(`Updated live rates for ${count} building materials.`);
+      showToast(`Updated live rates for ${count} materials.`);
     }
     setIsAdminOpen(false);
+  };
+
+  const handleLockLogout = () => {
+    // Save any pending edits before locking
+    handleSaveAll();
+    setIsAuthenticated(false);
+    setIsChangingPin(false);
+    setEnteredPin('');
+    setPinError('');
+    setIsAdminOpen(false);
+    showToast('Owner panel locked and rates saved.');
   };
 
   const filtered = products.filter((p) => {
@@ -350,6 +339,22 @@ export default function AdminPriceModal() {
             </div>
           )}
 
+          {/* Note Banner on Rates */}
+          <div className="bg-amber-50/70 px-5 py-2.5 border-b border-amber-200 text-xs text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-amber-800">💡 Daily Rates Mode:</span>
+              <span>Rates updated here apply immediately to your active store session and cart.</span>
+            </div>
+            <a
+              href="https://github.com/puneeths602-cpu/Rk-enterprises-store/edit/main/src/data/products.ts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-black text-amber-700 hover:text-amber-900 underline flex items-center gap-1 shrink-0"
+            >
+              <span>Edit Global Base Rates on GitHub ↗</span>
+            </a>
+          </div>
+
           {/* Search & Bulk Action Bar */}
           <div className="p-4 border-b border-neutral-200 bg-neutral-50 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="relative w-full sm:w-72">
@@ -385,9 +390,9 @@ export default function AdminPriceModal() {
           {/* Material Price List */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 divide-y divide-neutral-100 space-y-3">
             {filtered.map((item) => {
-              const currentPrice = editPrices[item.id]?.price ?? item.price;
-              const currentOriginal = editPrices[item.id]?.originalPrice ?? item.originalPrice ?? '';
-              const isModified = editPrices[item.id] !== undefined && editPrices[item.id].price !== item.price;
+              const currentPrice = editPrices[item.id]?.price ?? String(item.price);
+              const currentOriginal = editPrices[item.id]?.originalPrice ?? (item.originalPrice ? String(item.originalPrice) : '');
+              const isModified = editPrices[item.id]?.price !== undefined && editPrices[item.id]?.price !== String(item.price);
               const isJustSaved = savedId === item.id;
 
               return (
@@ -435,8 +440,13 @@ export default function AdminPriceModal() {
                           <span className="absolute left-2.5 top-1.5 text-xs font-bold text-neutral-500">₹</span>
                           <input
                             type="number"
+                            placeholder="Price"
                             value={currentPrice}
                             onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                            onBlur={() => saveProductRate(item.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveProductRate(item.id);
+                            }}
                             className="w-24 sm:w-28 bg-white border-2 border-neutral-300 focus:border-amber-600 rounded-xl pl-6 pr-2 py-1.5 text-xs font-black text-neutral-900 outline-none"
                           />
                         </div>
@@ -453,6 +463,10 @@ export default function AdminPriceModal() {
                             placeholder="MRP"
                             value={currentOriginal}
                             onChange={(e) => handleOriginalPriceChange(item.id, e.target.value)}
+                            onBlur={() => saveProductRate(item.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveProductRate(item.id);
+                            }}
                             className="w-20 sm:w-24 bg-white border border-neutral-300 focus:border-neutral-500 rounded-xl pl-6 pr-2 py-1.5 text-xs font-medium text-neutral-500 outline-none"
                           />
                         </div>
@@ -462,7 +476,7 @@ export default function AdminPriceModal() {
                     {/* Save Single Item */}
                     <div className="self-end pt-3 sm:pt-0">
                       <button
-                        onClick={() => handleSaveSingle(item.id)}
+                        onClick={() => saveProductRate(item.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
                           isJustSaved
                             ? 'bg-emerald-600 text-white'
