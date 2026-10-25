@@ -37,6 +37,17 @@ export default function AdminPriceModal() {
     }
   }, []);
 
+  // Pre-load all current product rates into editor inputs
+  useEffect(() => {
+    if (isAdminOpen) {
+      const initial: Record<string, { price: number; originalPrice?: number }> = {};
+      products.forEach((p) => {
+        initial[p.id] = { price: p.price, originalPrice: p.originalPrice };
+      });
+      setEditPrices(initial);
+    }
+  }, [isAdminOpen, products]);
+
   if (!isAdminOpen) return null;
 
   const handleVerifyPin = (e: React.FormEvent) => {

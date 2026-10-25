@@ -56,7 +56,7 @@ export default function ProductCatalog({ searchQuery, onClearSearch }: ProductCa
       if (sortBy === 'price-desc') return b.price - a.price;
       return 0; // default / featured
     });
-  }, [selectedCategory, selectedBrand, searchQuery, sortBy]);
+  }, [products, selectedCategory, selectedBrand, searchQuery, sortBy]);
 
   const resetAll = () => {
     setSelectedCategory('All');

@@ -109,8 +109,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Price Update Function for Owner / Admin
   const updateProductPrice = (productId: string, newPrice: number, newOriginalPrice?: number) => {
-    setProducts((prev) => {
-      const updated = prev.map((p) => {
+    // 1. Immediately save to localStorage synchronously
+    try {
+      const currentSaved = localStorage.getItem('rk_custom_prices');
+      const priceMap: Record<string, { price: number; originalPrice?: number }> = currentSaved ? JSON.parse(currentSaved) : {};
+      priceMap[productId] = { price: newPrice, originalPrice: newOriginalPrice };
+      localStorage.setItem('rk_custom_prices', JSON.stringify(priceMap));
+    } catch {
+      // Ignore storage errors
+    }
+
+    // 2. Update React products state with fresh immutable objects
+    setProducts((prev) =>
+      prev.map((p) => {
         if (p.id === productId) {
           return {
             ...p,
@@ -119,22 +130,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           };
         }
         return p;
-      });
+      })
+    );
 
-      // Save to localStorage map
-      try {
-        const currentSaved = localStorage.getItem('rk_custom_prices');
-        const priceMap: Record<string, { price: number; originalPrice?: number }> = currentSaved ? JSON.parse(currentSaved) : {};
-        priceMap[productId] = { price: newPrice, originalPrice: newOriginalPrice };
-        localStorage.setItem('rk_custom_prices', JSON.stringify(priceMap));
-      } catch {
-        // Ignore storage errors
-      }
-
-      return updated;
-    });
-
-    // Also update existing item price if already in cart
+    // 3. Update existing item price if already in cart
     setCart((prev) =>
       prev.map((item) => {
         if (item.product.id === productId) {
